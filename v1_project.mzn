@@ -1,15 +1,23 @@
+include "data.dzn";
+
 % Use this editor as a MiniZinc scratch book
 int: max_wait_duration;
-bool: same_vehicle_backward;
+int: same_vehicle_backward;
+
+%Places
+int:number_of_places;
+array[1..number_of_places] of int: places_ID;
+array[1..number_of_places] of int: places_category;
+
 
 %Vehicules
-int : number_of_vehicules;
-array[1..number_of_vehicules] of int: vehicle_IDs;
-array[1..number_of_vehicules] of int: vehicle_capacity;
-array[1..number_of_vehicules] of int: vehicle_category;
-array[1..number_of_vehicules] of int: vehicle_availability; %array of array !!
-array[1..number_of_vehicules] of int: starting_depot;
-array[1..number_of_vehicules] of int: ending_depot;
+int : number_of_vehicles;
+array[1..number_of_vehicles] of int: vehicle_IDs;
+array[1..number_of_vehicles] of int: capacity;
+array[1..number_of_vehicles] of int: can_Take;
+array[1..number_of_vehicles] of int: vehicle_availability; %array of array !!
+array[1..number_of_vehicles] of int: starting_depot;
+array[1..number_of_vehicles] of int: ending_depot;
 
 %Patients
 int : number_of_patients;
@@ -35,22 +43,10 @@ array[1..number_of_actions] of int: actions_end_location;
 array[1..number_of_actions] of bool: forward_or_backward;
 
 %Distance Matrix
-int : number_of_locations;
-set of int: HEIGHT = 0..number_of_locations;
-set of int: WIDTH = 0..number_of_locations;
-array[HEIGHT,WIDTH] of var int: Dist_Matrix;
+array[1..number_of_places,1..number_of_places] of int: distMatrix;
 
 % Decision variables
 int :number_of_requests;
 array[1..number_of_requests] of 0..1: accepted_request;
 
-
-
-% Contraintes
-% Les actions attribuées au même véhicule ne doivent pas se chevaucher dans le temps
-constraint forall(v in 1..number_of_vehicules)(
-    forall(a1, a2 in 1..number_of_actions where a1 < a2)(
-        (assigned_vehicle[a1] == v /\ assigned_vehicle[a2] == v) ->
-        ()
-    )
 
