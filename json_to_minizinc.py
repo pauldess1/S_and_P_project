@@ -32,14 +32,39 @@ def search_data_time(key, key2):
         first_item = False
     minizinc_file.write("];\n")
 
-def search_data_interval(key, key2):
+def search_data_indice(key, key2, indice):
     first_item = True
     for element in data[key]:
         if not first_item:
             minizinc_file.write(", ")
-        minizinc_file.write(str(interval_in_minutes(element[key2])))
+        minizinc_file.write(str((interval_in_minutes(element[key2])[indice])))
         first_item = False
     minizinc_file.write("];\n")
+
+def search_data_canTake(key, key2):
+    first_item = True
+    for element in data[key]:
+        if not first_item:
+            minizinc_file.write(", ")
+        minizinc_file.write(str(element[key2][0]))
+        first_item = False
+    minizinc_file.write("];\n")
+
+def matrix(matrix):
+    minizinc_file.write("[")
+    first_line = True
+    for i in range(len(matrix)):
+        if first_line:
+            minizinc_file.write("| ")
+        first_line=False
+        first_item = True
+        for j in range(len(matrix[0])):
+            if not first_item:
+                minizinc_file.write(", ")
+            minizinc_file.write(str(matrix[i][j]))
+            first_item = False
+        minizinc_file.write("|")
+    minizinc_file.write("];")
     
 # Load JSON data
 with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\instances\easy\easy_1.json', 'r') as json_file:
@@ -70,15 +95,17 @@ with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\data.dzn'
     minizinc_file.write(f"vehicle_IDs = [")
     search_data("vehicles","id")
     minizinc_file.write(f"can_Take = [")
-    search_data("vehicles","canTake")
+    search_data_canTake("vehicles","canTake")
     minizinc_file.write(f"starting_depot = [")
     search_data("vehicles","start")
     minizinc_file.write(f"ending_depot = [")
     search_data("vehicles","end")
     minizinc_file.write(f"capacity = [")
     search_data("vehicles","capacity")
-    minizinc_file.write(f"vehicle_availability = [")
-    search_data_interval("vehicles","availability")
+    minizinc_file.write(f"vehicle_availability_start = [")
+    search_data_indice("vehicles","availability",0)
+    minizinc_file.write(f"vehicle_availability_end = [")
+    search_data_indice("vehicles","availability",1)
 
     #Patients
     minizinc_file.write('% Patients \n')
@@ -103,8 +130,9 @@ with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\data.dzn'
 
 
     #Dist Matrix
-    minizinc_file.write(f"distMatrix = {data['distMatrix']};\n")
-    
+    minizinc_file.write(f"distMatrix = ")
+    matrix(data['distMatrix'])
+
 minizinc_file.close()
 
 print("MiniZinc code generated successfully.")
