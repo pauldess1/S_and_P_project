@@ -72,7 +72,11 @@ constraint forall(i in 0..(number_of_patients-1))(
     endif
 );
 
-
+constraint forall(i,j in 1..(number_of_activities-1))(
+  if (vehicle_assigned[i] == vehicle_assigned[j]) /\ (i != j) then 
+  (start_date[j]-start_date[i] >= distMatrix[start_location[i],start_location[j]]+ srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1]) \/ (start_date[i]-start_date[j] >= distMatrix[start_location[j],start_location[i]]+ srv_duration[activities_patients_IDs[j] - patients_IDs[1] + 1])
+  endif);
+  
 solve maximize sum(requests_accepted);
 %output [show(executed_status)]
 
