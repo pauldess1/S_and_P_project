@@ -65,6 +65,78 @@ def matrix(matrix):
             first_item = False
         minizinc_file.write("|")
     minizinc_file.write("];")
+
+def activities_creation():
+    activities_patients_IDs = []
+    duration_of_trip = []
+    forward_or_backward=[]
+    start_location=[]
+    end_location=[]
+    for json in data["patients"]:
+        if json['start']== (-1):
+            forward_or_backward.append(-1)
+        else : 
+            forward_or_backward.append(1)
+
+        activities_patients_IDs.append(json["id"])
+        duration_of_trip.append(data['distMatrix'][json['start']][json['destination']])
+        start_location.append(json['start'])
+        end_location.append(json['destination'])
+        activities_patients_IDs.append(json["id"])
+        if json['end']== (-1):
+            forward_or_backward.append(-1)
+        else : 
+            forward_or_backward.append(0)
+        duration_of_trip.append(data['distMatrix'][json['end']][json['destination']])
+        start_location.append(json['destination'])
+        end_location.append(json['end'])
+
+    minizinc_file.write("activities_patients_IDs = [")
+    first_element = True
+    for i in range(len(activities_patients_IDs)):
+        if not first_element:
+            minizinc_file.write(",")
+        first_element=False
+        minizinc_file.write(str(activities_patients_IDs[i]))
+    minizinc_file.write("];\n")
+    minizinc_file.write("duration_of_trip = [")
+    first_element = True
+    for i in range(len(duration_of_trip)):
+        if not first_element:
+            minizinc_file.write(",")
+        first_element=False
+        minizinc_file.write(str(duration_of_trip[i]))
+    minizinc_file.write("];\n")
+
+    minizinc_file.write("forward_or_backward = [ ")
+    first_element = True
+    for i in range(len(forward_or_backward)):
+        if not first_element:
+            minizinc_file.write(",")
+        first_element=False
+        minizinc_file.write(str(forward_or_backward[i]))
+    minizinc_file.write("];\n")
+    minizinc_file.write('number_of_activities = ' + str(len(forward_or_backward)) + ';\n')
+
+    minizinc_file.write("start_location = [ ")
+    first_element = True
+    for i in range(len(forward_or_backward)):
+        if not first_element:
+            minizinc_file.write(",")
+        first_element=False
+        minizinc_file.write(str(start_location[i]))
+    minizinc_file.write("];\n")
+
+    minizinc_file.write("end_location = [ ")
+    first_element = True
+    for i in range(len(forward_or_backward)):
+        if not first_element:
+            minizinc_file.write(",")
+        first_element=False
+        minizinc_file.write(str(end_location[i]))
+    minizinc_file.write("];\n")
+
+
     
 # Load JSON data
 with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\instances\easy\easy_1.json', 'r') as json_file:
@@ -127,6 +199,11 @@ with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\data.dzn'
     search_data_time("patients", "rdvDuration")
     minizinc_file.write('srv_duration = [')
     search_data_time("patients", "srvDuration")
+
+    #Activities
+    minizinc_file.write('% Activities \n')
+    activities_creation()
+    
 
 
     #Dist Matrix
