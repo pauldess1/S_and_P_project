@@ -139,7 +139,7 @@ def activities_creation():
 
     
 # Load JSON data
-with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\instances\easy\easy_1.json', 'r') as json_file:
+with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\custom\custom_1.json', 'r') as json_file:
     data = json.load(json_file)
 
 # Open MiniZinc file for writing
