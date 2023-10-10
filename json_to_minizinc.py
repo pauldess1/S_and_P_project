@@ -72,12 +72,15 @@ def activities_creation():
     forward_or_backward=[]
     start_location=[]
     end_location=[]
+    activities_load = []
+
     for json in data["patients"]:
         if json['start']== (-1):
             forward_or_backward.append(-1)
+            activities_load.append(0)
         else : 
             forward_or_backward.append(1)
-
+            activities_load.append(json['load'])
         activities_patients_IDs.append(json["id"])
         duration_of_trip.append(data['distMatrix'][json['start']][json['destination']])
         start_location.append(json['start'])
@@ -85,8 +88,10 @@ def activities_creation():
         activities_patients_IDs.append(json["id"])
         if json['end']== (-1):
             forward_or_backward.append(-1)
+            activities_load.append(0)
         else : 
             forward_or_backward.append(0)
+            activities_load.append(json['load'])
         duration_of_trip.append(data['distMatrix'][json['end']][json['destination']])
         start_location.append(json['destination'])
         end_location.append(json['end'])
@@ -134,6 +139,15 @@ def activities_creation():
             minizinc_file.write(",")
         first_element=False
         minizinc_file.write(str(end_location[i]))
+    minizinc_file.write("];\n")
+
+    minizinc_file.write("activities_load = [ ")
+    first_element = True
+    for i in range(len(activities_load)):
+        if not first_element:
+            minizinc_file.write(",")
+        first_element=False
+        minizinc_file.write(str(activities_load[i]))
     minizinc_file.write("];\n")
 
 
@@ -203,7 +217,7 @@ with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\data.dzn'
     #Activities
     minizinc_file.write('% Activities \n')
     activities_creation()
-    
+
 
 
     #Dist Matrix
