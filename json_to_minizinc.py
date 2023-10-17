@@ -1,4 +1,6 @@
 import json
+from minizinc import Solver, Instance, Model
+
 
 def duration_in_minutes(duree):
     heures, minutes = map(int, duree.split('h'))
@@ -138,11 +140,11 @@ def activities_creation():
 
     
 # Load JSON data
-with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\easy\easy_1.json', 'r') as json_file:
+with open(r'/home/paul/Project/very_easy/very_easy_1.json', 'r') as json_file:
     data = json.load(json_file)
 
 # Open MiniZinc file for writing
-with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\data.dzn', 'w') as minizinc_file:
+with open(r'/home/paul/Project/data.dzn', 'w') as minizinc_file:
 
     #Global parameters
     minizinc_file.write('%Global parameters \n')
@@ -212,3 +214,120 @@ with open(r'C:\Users\pauld\Desktop\TECNICO\Search and Planning\Project\data.dzn'
 minizinc_file.close()
 
 print("MiniZinc code generated successfully.")
+
+# Load n-Queens model from file
+model = Model(r"/home/paul/Project/v1_project.mzn")
+
+# Find the MiniZinc solver configuration for Gecode
+gecode = Solver.lookup("gecode")
+# Create an Instance of the n-Queens model for Gecode
+instance = Instance(gecode, model)
+result = instance.solve()
+# Output the array q
+
+executed_status= result['executed_status']
+forward_or_backward= result['forward_or_backward']
+start_date = result['start_date']
+end_date= result['end_date']
+vehicle_assigned= result['vehicle_assigned']
+requests_accepted= result['requests_accepted']
+start_location= result['start_location']
+end_location= result['end_location']
+activities_patients_IDs= result['activities_patients_IDs']
+distMatrix= result['distMatrix']
+starting_depot= result['starting_depot']
+ending_depot= result['ending_depot']
+vehicle_IDs= result['vehicle_IDs']
+srv_duration= result['srv_duration']
+patients_IDs= result['patients_IDs']
+
+
+def accept_matrix(matrix):
+    matrix_copy = [x[:] for x in matrix]
+    for i in range(len(requests_accepted)):
+        if requests_accepted[i] != 1:
+            for element in matrix_copy:
+                del element[2*i]
+                del element[2*i+1]
+        else :
+            if forward_or_backward[2*i] == -1:
+                for element in matrix_copy:
+                    del element[2 * i]
+            if forward_or_backward[2*i+1] == -1:
+                for element in matrix_copy:
+                    del element[2 * i+1]
+    return matrix_copy
+
+matrix = [start_date, end_date, vehicle_assigned, start_location, end_location, activities_patients_IDs, forward_or_backward]
+accepted_matrix = accept_matrix(matrix)
+sorted_matrix = [list(x) for x in zip(*sorted(zip(*accepted_matrix), key=lambda x: x[2]))]
+print(sorted_matrix)
+    
+output_format = {
+    "requests": sum(requests_accepted),
+    "vehicles": []
+}
+current_vehicle = sorted_matrix[2][0]-1
+print(current_vehicle)
+first_element = True
+first = True
+
+for k in range(len(sorted_matrix[0])):
+    if sorted_matrix[2][k]==current_vehicle :
+        if first_element:
+            output_format["vehicles"].append({"id": current_vehicle,"trips": []})
+        if sorted_matrix[3][k]!=sorted_matrix[4][k-1]:
+                tripbetween = {
+            "origin": sorted_matrix[4][k-1],
+            "destination": sorted_matrix[3][k],
+            "arrival": f"{(sorted_matrix[1][k - 1] + distMatrix[sorted_matrix[4][k - 1]][sorted_matrix[3][k]]) // 60}h{(sorted_matrix[1][k - 1] + distMatrix[sorted_matrix[4][k - 1]][sorted_matrix[3][k]]) % 60:02d}",
+            "patients": []}
+                output_format["vehicles"][-1]["trips"].append(tripbetween)
+
+        trip = {
+        "origin": sorted_matrix[3][k],
+        "destination": sorted_matrix[4][k],
+        "arrival": f"{sorted_matrix[1][k] // 60}h{sorted_matrix[1][k] % 60:02d}",
+        "patients": [activities_patients_IDs[k]]
+        }
+        output_format["vehicles"][-1]["trips"].append(trip)
+        first_element = False
+    else :
+        if not first and sorted_matrix[4][k-1]!=ending_depot[current_vehicle-vehicle_IDs[0]]:
+            tripe = {
+            "origin": sorted_matrix[4][k-1] ,
+            "destination": ending_depot[current_vehicle-vehicle_IDs[0]],
+            "arrival": f"{(sorted_matrix[1][k - 1] + distMatrix[sorted_matrix[4][k - 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) // 60}h{(sorted_matrix[1][k - 1] + distMatrix[sorted_matrix[4][k - 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) % 60:02d}",
+            "patients": []
+            }
+            output_format["vehicles"][-1]["trips"].append(tripe)
+        else :
+            first = False
+        while sorted_matrix[2][k]!=current_vehicle :
+            current_vehicle+=1
+        output_format["vehicles"].append({"id": current_vehicle,"trips": []})
+        tripb = {
+        "origin": starting_depot[current_vehicle-vehicle_IDs[0]],
+        "destination": sorted_matrix[3][k],
+        "arrival": f"{(sorted_matrix[0][k]-srv_duration[activities_patients_IDs[k]-patients_IDs[0]]) // 60}h{(sorted_matrix[0][k]-srv_duration[activities_patients_IDs[k]-patients_IDs[0]]) % 60:02d}",
+        "patients": []
+        }
+        output_format["vehicles"][-1]["trips"].append(tripb)
+        trip = {
+            "origin": sorted_matrix[3][k],
+            "destination": sorted_matrix[4][k],
+            "arrival": f"{sorted_matrix[1][k] // 60}h{end_date[k] % 60:02d}",
+            "patients": [activities_patients_IDs[k]]
+            }
+        output_format["vehicles"][-1]["trips"].append(trip)
+        first_element = False
+if sorted_matrix[4][-1]!=ending_depot[current_vehicle-vehicle_IDs[0]]:
+    tripe = {
+            "origin": sorted_matrix[4][-1] ,
+            "destination": ending_depot[current_vehicle-vehicle_IDs[0]],
+            "arrival": f"{(sorted_matrix[1][- 1] + distMatrix[sorted_matrix[4][- 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) // 60}h{(sorted_matrix[1][-1] + distMatrix[sorted_matrix[4][-1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) % 60:02d}",
+            "patients": []
+            }       
+    output_format["vehicles"][-1]["trips"].append(tripe)
+print(output_format)
+

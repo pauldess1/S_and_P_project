@@ -52,7 +52,7 @@ array[1..number_of_activities] of var 0..1: category_satisfied;
 array[1..number_of_activities] of var 0..1: horaire_satisfied;
 array[1..number_of_activities] of var 0..1: availability_satisfied;
 
-array[1..number_of_patients] of var int: requests_accepted = array1d(1..number_of_patients, [0 | i in 1..number_of_patients]);
+array[1..number_of_patients] of var 0..1: requests_accepted;
 
 %DistMatrix
 array[1..number_of_places, 1..number_of_places] of int : distMatrix;
@@ -103,12 +103,27 @@ constraint forall(i in 1..number_of_activities)(
                           availability_satisfied[i] == 1)
 );
 
-constraint forall(i in 0..number_of_patients)(
-    if executed_status[i*2+1] == 1 /\ executed_status[(i+1)*2] == 1 
-    then 
-        requests_accepted[i+1] = 1
-    endif
-);
+constraint forall(i in 0..number_of_patients-1)(
+  requests_accepted[i+1] = (executed_status[1+2*i]==1/\executed_status[2+2*i]==1)
+  );
+
+
  
-solve maximize sum(executed_status);
-%output[show(requests_accepted)]
+solve maximize sum(requests_accepted);
+output [
+    "executed_status= \(executed_status)\n",
+    "forward_or_backward= \(forward_or_backward)\n",
+    "start_date= \(start_date)\n",
+    "end_date= \(end_date)\n",
+    "vehicle_assigned= \(vehicle_assigned)\n",
+    "requests_accepted= \(requests_accepted)\n",
+    "start_location= \(start_location)\n",
+    "end_location= \(end_location)\n",
+    "activities_patients_IDs= \(activities_patients_IDs)\n",
+    "distMatrix= \(distMatrix)\n",
+    "starting_depot= \(starting_depot)\n",
+    "ending_depot= \(ending_depot)\n",
+    "vehicle_IDs= \(vehicle_IDs)\n",
+    "srv_duration= \(srv_duration)\n",
+    "patients_IDs= \(patients_IDs)\n"
+];
