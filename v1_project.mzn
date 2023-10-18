@@ -4,6 +4,9 @@ include "data.dzn";
 int: max_wait_duration;
 int: same_vehicle_backward;
 int: number_of_places;
+int : max_len;
+int : max_len_availability;
+
 
 %Places
 array[1..number_of_places] of int: places_ID;
@@ -14,9 +17,9 @@ array[1..number_of_places] of int: places_category;
 int : number_of_vehicles;
 array[1..number_of_vehicles] of int: vehicle_IDs;
 array[1..number_of_vehicles] of int: capacity;
-array[1..number_of_vehicles] of int: can_Take; %could have several values, array of array
-array[1..number_of_vehicles] of int: vehicle_availability_start;
-array[1..number_of_vehicles] of int: vehicle_availability_end;
+array[1..number_of_vehicles, 1..max_len] of int: can_Take;
+array[1..number_of_vehicles, 1..max_len_availability] of int: vehicle_availability_start;
+array[1..number_of_vehicles, 1..max_len_availability] of int: vehicle_availability_end;
 array[1..number_of_vehicles] of int: starting_depot;
 array[1..number_of_vehicles] of int: ending_depot;
 
@@ -76,12 +79,23 @@ constraint forall(i in 1..number_of_activities) (
   start_date[i] == end_date[i] - duration_of_trip[i]
 );
 
+
 constraint forall(i in 1..number_of_activities) (
-  category_satisfied[i] = (can_Take[vehicle_assigned[i] - vehicle_IDs[1] + 1] = patients_category[activities_patients_IDs[i] - patients_IDs[1] + 1]));
-  
+    category_satisfied[i] = 
+        (exists(j in 1..max_len) (
+            can_Take[vehicle_assigned[i] - vehicle_IDs[1] + 1, j] = patients_category[activities_patients_IDs[i] - patients_IDs[1] + 1]
+        ))
+);
+
 constraint forall(i in 1..number_of_activities) (
+  if max_len_availability==1 then
 availability_satisfied[i] =(
-  start_date[i]>vehicle_availability_start[vehicle_assigned[i]-vehicle_IDs[1]+1] /\ end_date[i] < vehicle_availability_end[ vehicle_assigned[i]-vehicle_IDs[1]+1]));
+  (start_date[i]>vehicle_availability_start[vehicle_assigned[i]-vehicle_IDs[1]+1,1] /\ end_date[i] < vehicle_availability_end[ vehicle_assigned[i]-vehicle_IDs[1]+1,1]))
+  else 
+  availability_satisfied[i] =(
+  (start_date[i]>vehicle_availability_start[vehicle_assigned[i]-vehicle_IDs[1]+1,1] /\ end_date[i] < vehicle_availability_end[ vehicle_assigned[i]-vehicle_IDs[1]+1,1])
+  \/ (start_date[i]>vehicle_availability_start[vehicle_assigned[i]-vehicle_IDs[1]+1,2] /\ end_date[i] < vehicle_availability_end[ vehicle_assigned[i]-vehicle_IDs[1]+1,2])
+)endif);
   
 
 constraint forall(i in 1..number_of_activities where forward_or_backward[i] != -1)(
@@ -110,20 +124,17 @@ constraint forall(i in 0..number_of_patients-1)(
 
  
 solve maximize sum(requests_accepted);
-output [
-    "executed_status= \(executed_status)\n",
-    "forward_or_backward= \(forward_or_backward)\n",
-    "start_date= \(start_date)\n",
-    "end_date= \(end_date)\n",
-    "vehicle_assigned= \(vehicle_assigned)\n",
-    "requests_accepted= \(requests_accepted)\n",
-    "start_location= \(start_location)\n",
-    "end_location= \(end_location)\n",
-    "activities_patients_IDs= \(activities_patients_IDs)\n",
-    "distMatrix= \(distMatrix)\n",
-    "starting_depot= \(starting_depot)\n",
-    "ending_depot= \(ending_depot)\n",
-    "vehicle_IDs= \(vehicle_IDs)\n",
-    "srv_duration= \(srv_duration)\n",
-    "patients_IDs= \(patients_IDs)\n"
-];
+output ["{\"executed_status\": ", show(executed_status), ",\n"];
+output ["\"forward_or_backward\": ", show(forward_or_backward), ",\n"];
+output ["\"start_date\": ", show(start_date), ",\n"];
+output ["\"end_date\": ", show(end_date), ",\n"];
+output ["\"vehicle_assigned\": ", show(vehicle_assigned), ",\n"];
+output ["\"requests_accepted\": ", show(requests_accepted), ",\n"];
+output ["\"start_location\": ", show(start_location), ",\n"];
+output ["\"end_location\": ", show(end_location), ",\n"];
+output ["\"activities_patients_IDs\": ", show(activities_patients_IDs), ",\n"];
+output ["\"starting_depot\": ", show(starting_depot), ",\n"];
+output ["\"ending_depot\": ", show(ending_depot), ",\n"];
+output ["\"vehicle_IDs\": ", show(vehicle_IDs), ",\n"];
+output ["\"srv_duration\": ", show(srv_duration), ",\n"];
+output ["\"patients_IDs\": ", show(patients_IDs), "}\n"];
