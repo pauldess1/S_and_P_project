@@ -64,12 +64,12 @@ constraint forall(i in 1..number_of_activities) (
   if forward_or_backward[i] == 1 then
     horaire_satisfied[i] = (
       (rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] > end_date[i]) /\
-      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] - max_wait_duration) < end_date[i])
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - max_wait_duration) < end_date[i])
     )
   elseif forward_or_backward[i] == 0 then
     horaire_satisfied[i] = 
       ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] + srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1]) < start_date[i]) /\
-      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] + srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] + max_wait_duration) > start_date[i]) 
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] +  max_wait_duration) > start_date[i]) 
    else 
      horaire_satisfied[i]=1
   endif
@@ -137,4 +137,5 @@ output ["\"starting_depot\": ", show(starting_depot), ",\n"];
 output ["\"ending_depot\": ", show(ending_depot), ",\n"];
 output ["\"vehicle_IDs\": ", show(vehicle_IDs), ",\n"];
 output ["\"srv_duration\": ", show(srv_duration), ",\n"];
+output ["\"vehicle_IDs\": ", show(vehicle_IDs), ",\n"];
 output ["\"patients_IDs\": ", show(patients_IDs), "}\n"];

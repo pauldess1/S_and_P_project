@@ -3,6 +3,12 @@ from minizinc import Solver, Instance, Model
 import subprocess
 import sys
 
+def elements_not_in_list(L1, L2):
+    set_L1 = set(L1)
+    set_L2 = set(L2)
+    elements_not_in_L2 = list(set_L1 - set_L2)
+    return elements_not_in_L2
+
 def duration_in_minutes(duree):
     heures, minutes = map(int, duree.split('h'))
     return heures * 60 + minutes
@@ -15,7 +21,6 @@ def interval_in_minutes(time_str):
         result.append([duration_in_minutes(parts[0]), duration_in_minutes(parts[1])])
     return result[0]
 
-print(interval_in_minutes("07h00:20h00"))
 
 def bool_to_int(valeur_bool):
     return int(valeur_bool) 
@@ -168,8 +173,6 @@ def write_Globalparameters(data):
         if len(vehicule['availability'])>max_len_availability:
             max_len_availability = len(vehicule['availability'])
 
-    print(max_len_availability)
-
     minizinc_file.write('%Global parameters \n')
     minizinc_file.write(f"max_wait_duration = {duration_in_minutes(data['maxWaitTime'])};\n")
     minizinc_file.write(f"same_vehicle_backward = {bool_to_int(data['sameVehicleBackward'])};\n")
@@ -301,7 +304,7 @@ def create_output (start_date, end_date, vehicle_assigned, start_location, end_l
             trip = {
                 "origin": sorted_matrix[3][k],
                 "destination": sorted_matrix[4][k],
-                "arrival": f"{sorted_matrix[1][k] // 60}h{end_date[k] % 60:02d}",
+                "arrival": f"{sorted_matrix[1][k] // 60}h{sorted_matrix[1][k] % 60:02d}",
                 "patients": [activities_patients_IDs[k]]
                 }
             output_format["vehicles"][-1]["trips"].append(trip)
@@ -310,11 +313,17 @@ def create_output (start_date, end_date, vehicle_assigned, start_location, end_l
         tripe = {
                 "origin": sorted_matrix[4][-1] ,
                 "destination": ending_depot[current_vehicle-vehicle_IDs[0]],
-                "arrival": f"{(sorted_matrix[1][- 1] + distMatrix[sorted_matrix[4][- 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) // 60}h{(sorted_matrix[1][-1] + distMatrix[sorted_matrix[4][-1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) % 60:02d}",
+                "arrival": f"{(max(srv_duration)+sorted_matrix[1][- 1] + distMatrix[sorted_matrix[4][- 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) // 60}h{(max(srv_duration)+sorted_matrix[1][-1] + distMatrix[sorted_matrix[4][-1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) % 60:02d}",
                 "patients": []
                 }       
         output_format["vehicles"][-1]["trips"].append(tripe)
-    return(output_format)
+    all_vehicles = vehicle_IDs
+    vehicles_with_trips = list(set(vehicle_assigned))
+    vehicles_without_trips = elements_not_in_list(all_vehicles, vehicles_with_trips)
+    for vehicle_id in vehicles_without_trips:
+        output_format["vehicles"].append({"id": vehicle_id, "trips": []})
+
+    return output_format
 
 
 
@@ -332,8 +341,6 @@ else:
         # Generate MiniZinc code and write it to 'data.dzn' file
         with open(r'data.dzn', 'w') as minizinc_file:
             write_Globalparameters(data)
-
-        print("MiniZinc code generated successfully.")
 
         # Execute MiniZinc model and process the output
         minizinc_output = subprocess.check_output(["minizinc", "v1_project.mzn"]).decode("utf-8")
@@ -358,6 +365,7 @@ else:
         vehicle_IDs = result['vehicle_IDs']
         srv_duration = result['srv_duration']
         patients_IDs = result['patients_IDs']
+        vehicle_IDs = result['vehicle_IDs']
 
         # Create the output data structure
         output_data = create_output(start_date, end_date, vehicle_assigned, start_location, end_location,
