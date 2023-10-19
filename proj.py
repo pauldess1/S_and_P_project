@@ -297,7 +297,7 @@ def create_output (start_date, end_date, vehicle_assigned, start_location, end_l
             tripb = {
             "origin": starting_depot[current_vehicle-vehicle_IDs[0]],
             "destination": sorted_matrix[3][k],
-            "arrival": f"{(sorted_matrix[0][k]-srv_duration[activities_patients_IDs[k]-patients_IDs[0]]) // 60}h{(sorted_matrix[0][k]-srv_duration[activities_patients_IDs[k]-patients_IDs[0]]) % 60:02d}",
+            "arrival": f"{(sorted_matrix[0][k]) // 60}h{(sorted_matrix[0][k]) % 60:02d}",
             "patients": []
             }
             output_format["vehicles"][-1]["trips"].append(tripb)
@@ -313,7 +313,7 @@ def create_output (start_date, end_date, vehicle_assigned, start_location, end_l
         tripe = {
                 "origin": sorted_matrix[4][-1] ,
                 "destination": ending_depot[current_vehicle-vehicle_IDs[0]],
-                "arrival": f"{(max(srv_duration)+sorted_matrix[1][- 1] + distMatrix[sorted_matrix[4][- 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) // 60}h{(max(srv_duration)+sorted_matrix[1][-1] + distMatrix[sorted_matrix[4][-1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) % 60:02d}",
+                "arrival": f"{(sorted_matrix[1][- 1] + distMatrix[sorted_matrix[4][- 1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) // 60}h{(sorted_matrix[1][-1] + distMatrix[sorted_matrix[4][-1]][ending_depot[current_vehicle - vehicle_IDs[0]]]) % 60:02d}",
                 "patients": []
                 }       
         output_format["vehicles"][-1]["trips"].append(tripe)
@@ -373,7 +373,7 @@ else:
 
         # Write the output data to the specified output file
         with open(output_file_name, 'w') as output_file:
-            json.dump(output_data, output_file)
+            json.dump(output_data, output_file, indent = 2)
 
     except FileNotFoundError:
         print("Error: The specified input file was not found.")

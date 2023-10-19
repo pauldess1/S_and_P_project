@@ -48,6 +48,7 @@ array[1..number_of_activities] of int: duration_of_trip;
 array[1..number_of_activities] of int: forward_or_backward;
 array[1..number_of_activities] of var 0..1: executed_status;
 array[1..number_of_activities] of var first_vehicle..last_vehicle: vehicle_assigned;
+array[1..number_of_activities] of var int: trip_duration;
 
 %Satisfied
 array[1..number_of_activities] of var 0..1: samevehicle_satisfied;
@@ -63,20 +64,29 @@ array[1..number_of_places, 1..number_of_places] of int : distMatrix;
 constraint forall(i in 1..number_of_activities) (
   if forward_or_backward[i] == 1 then
     horaire_satisfied[i] = (
-      (rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] > end_date[i]) /\
-      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - max_wait_duration) < end_date[i])
+      (rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] > end_date[i]) /\
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - max_wait_duration) < end_date[i]) /\
+      (rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] > start_date[i]) /\
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] - max_wait_duration) < start_date[i])   
     )
   elseif forward_or_backward[i] == 0 then
     horaire_satisfied[i] = 
-      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] + srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1]) < start_date[i]) /\
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1]) < start_date[i]) /\
       ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] +  max_wait_duration) > start_date[i]) 
+      /\
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1]) < end_date[i]) /\
+      ((rdv_time[activities_patients_IDs[i] - patients_IDs[1] + 1] + rdv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1] +  max_wait_duration) > end_date[i])
    else 
      horaire_satisfied[i]=1
   endif
 );
 
 constraint forall(i in 1..number_of_activities) (
-  start_date[i] == end_date[i] - duration_of_trip[i]
+  start_date[i] = end_date[i] - trip_duration[i]
+);
+
+constraint forall(i in 1..number_of_activities)(
+trip_duration[i] >= distMatrix[start_location[i]+1, end_location[i]+1]+2*srv_duration[activities_patients_IDs[i] - patients_IDs[1] + 1]
 );
 
 
