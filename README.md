@@ -30,8 +30,6 @@ An illustration with a single vehicle and two patients (A and B) is provided. Th
 
 ## Repository Contents
 - `code/`: Contains the implementation code.
-- `data/`: Dataset or related data files.
-- `results/`: Output or result files.
 
 ### Project Structure
 The project structure is designed to organize code, data, and results.
